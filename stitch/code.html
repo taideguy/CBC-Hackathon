@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DOCKCHECK | Carrier Verification</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0e0e0e;
+        }
+        .headline-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .sharp-edge {
+            border-radius: 2px !important;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#FF6B00",
+                        "on-primary": "#000000",
+                        "surface": "#131313",
+                        "surface-container": "#1c1c1c",
+                        "surface-container-high": "#2a2a2a",
+                        "on-surface": "#e5e2e1",
+                        "outline": "#333333",
+                        "tertiary": "#9ccaff"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "2px", "lg": "4px", "xl": "6px", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-[#0e0e0e] text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-[#131313] border-b-2 border-outline px-6 py-4 flex justify-between items-center">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="terminal">terminal</span>
+<h1 class="font-['Space_Grotesk'] uppercase tracking-widest font-black text-xl text-primary">DOCKCHECK</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-stone-500 hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+</div>
+</header>
+<main class="max-w-4xl mx-auto px-4 pt-24 space-y-8">
+<!-- Search Input Section - Segmented Look -->
+<section class="w-full">
+<div class="flex items-stretch border-2 border-outline bg-surface-container overflow-hidden sharp-edge">
+<div class="pl-4 flex items-center text-stone-500">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</div>
+<input class="bg-transparent border-none focus:ring-0 flex-grow headline-font font-bold text-on-surface placeholder:text-stone-700 uppercase tracking-tight py-4 px-4" placeholder="DOT# OR CARRIER NAME" type="text"/>
+<button class="bg-primary text-on-primary px-8 py-4 headline-font font-black text-sm tracking-widest border-l-2 border-outline hover:bg-white transition-colors active:translate-y-0.5">
+                    RUN CHECK
+                </button>
+</div>
+</section>
+<!-- Verification Verdict Hero -->
+<section class="relative bg-surface border-2 border-primary p-8 sharp-edge">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-8">
+<div class="space-y-4">
+<h2 class="headline-font font-black text-4xl text-primary leading-none uppercase">Verify Before Loading</h2>
+<div class="flex items-center gap-2 text-primary font-bold bg-primary/10 w-fit px-3 py-1 border border-primary/20">
+<span class="material-symbols-outlined text-sm" data-icon="warning" data-weight="fill" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="uppercase tracking-tighter text-xs">4 RISK FLAGS DETECTED</span>
+</div>
+<p class="text-stone-300 font-medium leading-relaxed max-w-lg">
+                        Proceed with caution: Carrier ownership documentation mismatch and insurance renewal pending.
+                    </p>
+</div>
+<div class="flex-shrink-0">
+<div class="w-28 h-28 border-4 border-primary flex items-center justify-center bg-primary/5">
+<span class="headline-font text-4xl font-black text-primary">74%</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Carrier Summary -->
+<section class="bg-surface border-2 border-outline p-6 sharp-edge">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div>
+<h3 class="headline-font font-black text-2xl text-on-surface uppercase tracking-tight">GREENFIELD FREIGHT LLC</h3>
+<div class="flex flex-wrap gap-2 mt-4">
+<span class="bg-outline text-white px-3 py-1 text-[10px] font-black headline-font uppercase tracking-widest border border-stone-700">DOT: 1234567</span>
+<span class="bg-outline text-white px-3 py-1 text-[10px] font-black headline-font uppercase tracking-widest border border-stone-700">STATE: OH</span>
+<span class="bg-outline text-white px-3 py-1 text-[10px] font-black headline-font uppercase tracking-widest border border-stone-700">14 TRUCKS</span>
+</div>
+</div>
+<div class="h-14 w-14 bg-outline border-2 border-stone-700 flex items-center justify-center sharp-edge">
+<span class="material-symbols-outlined text-stone-400" data-icon="local_shipping">local_shipping</span>
+</div>
+</div>
+</section>
+<!-- Modular Diagnostic Tiles (Grid) -->
+<section class="grid grid-cols-2 md:grid-cols-3 gap-4">
+<!-- Authority -->
+<div class="bg-surface border-2 border-outline p-5 sharp-edge flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-tertiary" data-icon="verified">verified</span>
+<span class="border border-tertiary/30 text-tertiary px-2 py-0.5 text-[9px] font-black headline-font uppercase">Secure</span>
+</div>
+<div>
+<p class="text-[10px] font-black text-stone-500 uppercase headline-font mb-1">Authority</p>
+<p class="text-on-surface font-black text-base">ACTIVE</p>
+</div>
+</div>
+<!-- Insurance -->
+<div class="bg-surface border-2 border-outline p-5 sharp-edge flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-tertiary" data-icon="security">security</span>
+<span class="border border-tertiary/30 text-tertiary px-2 py-0.5 text-[9px] font-black headline-font uppercase">Secure</span>
+</div>
+<div>
+<p class="text-[10px] font-black text-stone-500 uppercase headline-font mb-1">Insurance</p>
+<p class="text-on-surface font-black text-base">CURRENT</p>
+</div>
+</div>
+<!-- Safety Rating -->
+<div class="bg-surface border-2 border-outline p-5 sharp-edge flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-tertiary" data-icon="assignment_turned_in">assignment_turned_in</span>
+<span class="border border-tertiary/30 text-tertiary px-2 py-0.5 text-[9px] font-black headline-font uppercase">Secure</span>
+</div>
+<div>
+<p class="text-[10px] font-black text-stone-500 uppercase headline-font mb-1">Safety Rating</p>
+<p class="text-on-surface font-black text-base">SATISFACTORY</p>
+</div>
+</div>
+<!-- Ownership -->
+<div class="bg-surface border-2 border-primary p-5 sharp-edge flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary" data-icon="group_work">group_work</span>
+<span class="bg-primary text-black px-2 py-0.5 text-[9px] font-black headline-font uppercase">Alert</span>
+</div>
+<div>
+<p class="text-[10px] font-black text-stone-500 uppercase headline-font mb-1">Ownership</p>
+<p class="text-on-surface font-black text-base">1 FLAG</p>
+</div>
+</div>
+<!-- Out of Service -->
+<div class="bg-surface border-2 border-outline p-5 sharp-edge flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-tertiary" data-icon="do_not_disturb_on">do_not_disturb_on</span>
+<span class="border border-tertiary/30 text-tertiary px-2 py-0.5 text-[9px] font-black headline-font uppercase">Secure</span>
+</div>
+<div>
+<p class="text-[10px] font-black text-stone-500 uppercase headline-font mb-1">Out of Service</p>
+<p class="text-on-surface font-black text-base">NONE</p>
+</div>
+</div>
+<!-- BASIC Scores -->
+<div class="bg-surface border-2 border-outline p-5 sharp-edge flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-tertiary" data-icon="query_stats">query_stats</span>
+<span class="border border-tertiary/30 text-tertiary px-2 py-0.5 text-[9px] font-black headline-font uppercase">Secure</span>
+</div>
+<div>
+<p class="text-[10px] font-black text-stone-500 uppercase headline-font mb-1">BASIC Scores</p>
+<p class="text-on-surface font-black text-base uppercase">NORMAL</p>
+</div>
+</div>
+</section>
+<!-- Risk Summary Analysis Card -->
+<section class="bg-surface border-2 border-outline p-8 sharp-edge">
+<h4 class="headline-font font-black text-[11px] text-stone-500 uppercase tracking-[0.3em] mb-6 border-b border-outline pb-2">Operational Assessment</h4>
+<div class="space-y-5 text-stone-300 font-body leading-relaxed text-sm">
+<p>Carrier shows consistent safety patterns, but recent ownership registration updates do not match DOT historical records. This may indicate a recent purchase or clerical discrepancy.</p>
+<p>Vehicle maintenance scores are in the top 15th percentile nationwide. Recommend secondary validation of insurance policy endorsement before dispatch.</p>
+</div>
+</section>
+<!-- Actions Section -->
+<section class="flex flex-col gap-4 pb-12">
+<button class="w-full bg-primary text-black py-5 sharp-edge headline-font font-black text-lg tracking-widest hover:bg-white transition-colors flex items-center justify-center gap-3">
+<span class="material-symbols-outlined" data-icon="visibility" data-weight="fill" style="font-variation-settings: 'FILL' 1;">visibility</span>
+                ADD TO WATCHLIST
+            </button>
+<button class="w-full bg-surface border-2 border-outline text-on-surface py-4 sharp-edge headline-font font-bold text-sm tracking-widest hover:bg-outline transition-colors">
+                VIEW OWNERSHIP HISTORY
+            </button>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-stretch h-20 bg-[#131313] border-t-2 border-outline z-50">
+<a class="flex flex-col items-center justify-center flex-1 bg-primary text-black transition-colors" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="verified_user" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="font-['Space_Grotesk'] uppercase text-[11px] font-black tracking-widest">Verify</span>
+</a>
+<a class="flex flex-col items-center justify-center flex-1 text-stone-500 border-x-2 border-outline hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="visibility">visibility</span>
+<span class="font-['Space_Grotesk'] uppercase text-[11px] font-black tracking-widest">Watchlist</span>
+</a>
+<a class="flex flex-col items-center justify-center flex-1 text-stone-500 hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="notification_important">notification_important</span>
+<span class="font-['Space_Grotesk'] uppercase text-[11px] font-black tracking-widest">Alerts</span>
+</a>
+</nav>
+</body></html>

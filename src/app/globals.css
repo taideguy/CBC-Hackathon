@@ -1,0 +1,220 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;900&family=Inter:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+/* ─── Kinetic Command Design Tokens ──────────────────────────── */
+:root {
+  --bg:        #0e0e0e;
+  --surface:   #131313;
+  --surface-2: #1c1c1c;
+  --surface-3: #2a2a2a;
+  --border:    #333333;
+  --border-2:  #444444;
+  --text:      #e5e2e1;
+  --text-2:    #a8a29e;
+  --text-3:    #57534e;
+
+  /* Signal state colors */
+  --primary:   #FF6B00;   /* warn / action */
+  --tertiary:  #9ccaff;   /* ok / secure */
+  --error:     #F74040;   /* danger */
+
+  /* Semantic aliases */
+  --accent:     #FF6B00;
+  --accent-dim: #7a3300;
+  --clear:      #9ccaff;
+  --clear-bg:   rgba(156, 202, 255, 0.08);
+  --clear-bdr:  rgba(156, 202, 255, 0.25);
+  --warn:       #FF6B00;
+  --warn-bg:    rgba(255, 107, 0, 0.08);
+  --warn-bdr:   rgba(255, 107, 0, 0.30);
+  --danger:     #F74040;
+  --danger-bg:  rgba(247, 64, 64, 0.08);
+  --danger-bdr: rgba(247, 64, 64, 0.30);
+
+  /* Typography per spec */
+  --font-display: 'Space Grotesk', sans-serif;   /* headers, nav, UI — 700/900 */
+  --font-body:    'Inter', sans-serif;            /* body, labels — 500/600 */
+  --font-mono:    'JetBrains Mono', monospace;   /* DOT/MC numbers, data */
+}
+
+/* ─── Base ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input[type="search"] { -webkit-appearance: none; appearance: none; }
+input[type="search"]::-webkit-search-cancel-button { display: none; }
+
+/* ─── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+/* ─── Animations ─────────────────────────────────────────────── */
+
+@keyframes verdict-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scan {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateX(400px); opacity: 0; }
+}
+
+@keyframes tick-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes danger-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(247, 64, 64, 0.5); }
+  50%       { box-shadow: 0 0 0 5px rgba(247, 64, 64, 0); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ─── Utility classes ────────────────────────────────────────── */
+
+.font-display   { font-family: var(--font-display); }
+.font-mono-data { font-family: var(--font-mono); }
+
+.animate-verdict-in {
+  animation: verdict-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.30s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Signal tile stagger ────────────────────────────────────── */
+.signal-tile {
+  animation: tick-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.signal-tile:nth-child(1) { animation-delay: 0.04s; }
+.signal-tile:nth-child(2) { animation-delay: 0.08s; }
+.signal-tile:nth-child(3) { animation-delay: 0.12s; }
+.signal-tile:nth-child(4) { animation-delay: 0.16s; }
+.signal-tile:nth-child(5) { animation-delay: 0.20s; }
+.signal-tile:nth-child(6) { animation-delay: 0.24s; }
+
+/* ─── Scan bar ───────────────────────────────────────────────── */
+.scan-bar {
+  position: absolute;
+  top: 0; left: 0;
+  width: 80px; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 107, 0, 0.20), transparent);
+  animation: scan 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ─── Desktop phone frame ────────────────────────────────────── */
+@media (min-width: 600px) {
+  body {
+    background: #030303;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 32px 0 48px;
+  }
+
+  .phone-frame {
+    position: relative;
+    width: 390px;
+    height: min(844px, calc(100vh - 80px));
+    border-radius: 50px;
+    overflow: hidden;
+    /* transform creates a new containing block for position:fixed descendants */
+    transform: translate(0);
+    background: var(--bg);
+    box-shadow:
+      0 0 0 1px #3a3a3a,
+      0 0 0 5px #101010,
+      0 48px 120px rgba(0, 0, 0, 0.92),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    flex-shrink: 0;
+  }
+
+  /* Side buttons — left volume + right power (decorative) */
+  .phone-frame::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 96px;
+    width: 4px;
+    height: 32px;
+    background: #2a2a2a;
+    border-radius: 3px 0 0 3px;
+    box-shadow: 0 44px 0 #2a2a2a, 0 88px 0 #2a2a2a;
+    pointer-events: none;
+  }
+  .phone-frame::after {
+    content: '';
+    position: absolute;
+    right: -4px;
+    top: 136px;
+    width: 4px;
+    height: 64px;
+    background: #2a2a2a;
+    border-radius: 0 3px 3px 0;
+    pointer-events: none;
+  }
+
+  /* Scrollable inner screen — hides scrollbar */
+  .phone-screen {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+  .phone-screen::-webkit-scrollbar { display: none; }
+}
+
+/* On mobile, the phone frame wrappers are invisible passthrough */
+@media (max-width: 599px) {
+  .phone-frame { display: contents; }
+  .phone-screen { display: contents; }
+}
+
+/* ─── Checkbox ───────────────────────────────────────────────── */
+.dc-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border: 2px solid var(--border-2);
+  border-radius: 2px;
+  background: var(--surface-2);
+  flex-shrink: 0;
+  cursor: pointer;
+  position: relative;
+}
+.dc-checkbox:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.dc-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px; top: 0px;
+  width: 5px; height: 9px;
+  border: 2px solid black;
+  border-top: none; border-left: none;
+  transform: rotate(45deg);
+}

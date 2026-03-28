@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/diff",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}
