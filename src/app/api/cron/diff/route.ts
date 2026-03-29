@@ -2,7 +2,7 @@
 // GET /api/cron/diff — Vercel Cron trigger at 03:00 UTC
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getWatchedCarriers, getOwnershipSnapshot, writeSnapshot, writeOwnershipEvent, getUnalertedEvents, markEventsAlerted } from '@/lib/db'
+import { getWatchedCarriers, getOwnershipSnapshot, writeSnapshot, writeOwnershipEvent, getUnalertedEvents, markEventsAlerted, writeInsHistFlags } from '@/lib/db'
 import { runOwnershipDiff, compareSnapshot } from '@/lib/diff'
 import { sendSMSAlert, sendEmailAlert } from '@/lib/alerts'
 import type { CronDiffResponse } from '@/types'
@@ -40,14 +40,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Download and parse bulk files
-    type DiffResultWithSnapshots = {
-      processed: number
-      changes: { dotNumber: string; field: string; oldValue: string; newValue: string; todaySnapshot: import('@/types').CarrierSnapshot }[]
-      todaySnapshots: Map<string, import('@/types').CarrierSnapshot>
-    }
-    const diffResult = await runOwnershipDiff(dotNumbers) as DiffResultWithSnapshots
-
-    const todaySnapshots = diffResult.todaySnapshots ?? new Map()
+    const diffResult = await runOwnershipDiff(dotNumbers)
+    const todaySnapshots = diffResult.todaySnapshots
     let changesDetected = 0
 
     // Compare each carrier against yesterday's snapshot
@@ -75,7 +69,12 @@ export async function GET(req: NextRequest) {
       snapshotWriteOps.push(writeSnapshot(dotNumber, todaySnapshot))
     }
 
-    await Promise.all([...snapshotWriteOps, ...eventWriteOps])
+    // Write InsHist ownership flags (name-change / transfer) parsed from bulk file
+    const insHistFlagOp = writeInsHistFlags(diffResult.insHistFlags).catch((err) =>
+      console.error('InsHist flags write error:', err)
+    )
+
+    await Promise.all([...snapshotWriteOps, ...eventWriteOps, insHistFlagOp])
 
     // Send alerts for unalerted events
     const events = await getUnalertedEvents()

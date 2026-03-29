@@ -201,37 +201,45 @@ function scoreOwnership(
   currentData: { legalName: string; physicalAddress: string; phone: string },
   dotNumber: string,
   changeVelocity: number,
-  totalInspections: number
+  totalInspections: number,
+  insHistFlag: { cancellationMethod: string; cancellationDate: string } | null
 ): Signal {
   const velocityBadge = changeVelocity >= 2
     ? `${changeVelocity} field${changeVelocity === 1 ? '' : 's'} changed in 30 days`
     : undefined
 
-  if (!snapshot) {
-    // Strong inspection history → neutral (well-inspected carrier, first lookup is informational)
-    // Weak history on a carrier claiming significant operations → warn
-    if (totalInspections >= 50) {
-      return {
-        id: 'ownership',
-        label: 'Ownership',
-        value: 'First lookup — no history',
-        status: 'neutral',
-        detail: `${totalInspections} inspections on record — add to watchlist to monitor`,
-      }
-    }
+  // InsHist flag always surfaces as a warn regardless of snapshot state
+  if (insHistFlag) {
+    const formattedDate = formatDate(insHistFlag.cancellationDate)
+    const method = insHistFlag.cancellationMethod.toLowerCase().includes('name')
+      ? 'name change'
+      : 'policy transfer'
     return {
       id: 'ownership',
       label: 'Ownership',
-      value: 'First lookup — no history',
+      value: `Insurance ${method} detected`,
       status: 'warn',
-      detail: 'Add to watchlist to track future changes',
+      detail: `Recorded ${formattedDate} — verify carrier identity before releasing freight`,
       expandDetail: {
-        rows: [{ label: 'Baseline', value: 'No snapshot — first lookup' }],
+        rows: [
+          { label: 'Signal type', value: insHistFlag.cancellationMethod },
+          { label: 'Recorded', value: formattedDate },
+        ],
         actionText: 'Call the number on SAFER directly. Do not use the number the driver gives you.',
-        actionColor: 'red',
+        actionColor: 'amber',
         saferDotNumber: dotNumber,
         velocityBadge,
       },
+    }
+  }
+
+  if (!snapshot) {
+    return {
+      id: 'ownership',
+      label: 'Ownership',
+      value: 'Monitoring started',
+      status: 'neutral',
+      detail: 'Check back after 24 hours for change detection',
     }
   }
 
@@ -559,6 +567,7 @@ export interface ScoringInput {
   snapshot: CarrierSnapshot | null
   changeVelocity?: number   // ownership events in last 30 days, from DB
   inspectionStats?: InspectionStats | null
+  insHistFlag?: { cancellationMethod: string; cancellationDate: string } | null
 }
 
 export function scoreSignals(input: ScoringInput): Signal[] {
@@ -576,7 +585,7 @@ export function scoreSignals(input: ScoringInput): Signal[] {
     scoreAuthority(input.carrier, input.authority),
     scoreInsurance(input.carrier, input.snapshot?.insuranceCancellationDate ?? null),
     scoreSafety(input.carrier),
-    scoreOwnership(input.snapshot, currentData, c.dotNumber, input.changeVelocity ?? 0, totalInspections),
+    scoreOwnership(input.snapshot, currentData, c.dotNumber, input.changeVelocity ?? 0, totalInspections, input.insHistFlag ?? null),
     scoreOutOfService(input.carrier),
     scoreBasics(input.basics, totalInspections),
   ]

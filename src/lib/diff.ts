@@ -30,6 +30,12 @@ interface InsHistRow {
   cancellationDate: string | null  // ISO date string of the nearest future cancellation
 }
 
+interface InsHistFlagRow {
+  dotNumber: string
+  cancellationMethod: string
+  cancellationDate: string  // ISO date string
+}
+
 // ---------------------------------------------------------------------------
 // Download helpers
 // ---------------------------------------------------------------------------
@@ -151,6 +157,51 @@ export async function parseInsHist(
 }
 
 // ---------------------------------------------------------------------------
+// Stream-parse INSITHIST.zip — name-change / transfer cancellations in last 90 days
+// Used by the nightly cron to populate ins_hist_flags in Supabase.
+// ---------------------------------------------------------------------------
+
+const OWNERSHIP_CANCELLATION_METHODS = ['name change', 'transferred', 'name changed', 'transfer']
+
+export async function parseInsHistFlags(
+  filePath: string,
+  dotNumbers: Set<string>
+): Promise<InsHistFlagRow[]> {
+  return new Promise((resolve, reject) => {
+    const results: InsHistFlagRow[] = []
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 90)
+    cutoff.setHours(0, 0, 0, 0)
+
+    createReadStream(filePath)
+      .pipe(createUnzip())
+      .pipe(csv())
+      .on('data', (row: Record<string, string>) => {
+        const dot = (row['DOT_NUMBER'] ?? row['USDOT_NUMBER'])?.trim()
+        if (!dot || !dotNumbers.has(dot)) return
+
+        const rawDate = (row['CANCELLATION_DATE'] ?? row['CANCEL_DATE'])?.trim()
+        if (!rawDate) return
+
+        const cancellationDate = new Date(rawDate)
+        if (isNaN(cancellationDate.getTime())) return
+        if (cancellationDate < cutoff) return  // older than 90 days
+
+        const method = (row['CANCELLATION_METHOD'] ?? row['CANCEL_TYPE'] ?? '').trim().toLowerCase()
+        if (!OWNERSHIP_CANCELLATION_METHODS.some((m) => method.includes(m))) return
+
+        results.push({
+          dotNumber: dot,
+          cancellationMethod: (row['CANCELLATION_METHOD'] ?? row['CANCEL_TYPE'] ?? '').trim(),
+          cancellationDate: cancellationDate.toISOString().split('T')[0],
+        })
+      })
+      .on('end', () => resolve(results))
+      .on('error', reject)
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Compare today's data against yesterday's snapshot
 // ---------------------------------------------------------------------------
 
@@ -191,9 +242,11 @@ export async function runOwnershipDiff(watchedDotNumbers: Set<string>): Promise<
     newValue: string
     todaySnapshot: CarrierSnapshot
   }[]
+  todaySnapshots: Map<string, CarrierSnapshot>
+  insHistFlags: InsHistFlagRow[]
 }> {
   if (watchedDotNumbers.size === 0) {
-    return { processed: 0, changes: [] }
+    return { processed: 0, changes: [], todaySnapshots: new Map(), insHistFlags: [] }
   }
 
   const tmpCensus1 = join(tmpdir(), `census1-${Date.now()}.zip`)
@@ -208,10 +261,11 @@ export async function runOwnershipDiff(watchedDotNumbers: Set<string>): Promise<
       downloadFile('https://ai.fmcsa.dot.gov/SMS/files/INSITHIST.zip', tmpInsHist).catch(() => null),
     ])
 
-    const [census1Data, census2Data, insHistData] = await Promise.all([
+    const [census1Data, census2Data, insHistData, insHistFlags] = await Promise.all([
       parseCensus1(tmpCensus1, watchedDotNumbers),
       parseCensus2(tmpCensus2, watchedDotNumbers),
       parseInsHist(tmpInsHist, watchedDotNumbers).catch(() => new Map<string, InsHistRow>()),
+      parseInsHistFlags(tmpInsHist, watchedDotNumbers).catch((): InsHistFlagRow[] => []),
     ])
 
     const today = new Date().toISOString().split('T')[0]
@@ -236,20 +290,9 @@ export async function runOwnershipDiff(watchedDotNumbers: Set<string>): Promise<
 
     return {
       processed: todaySnapshots.size,
-      changes: [], // Caller will do the DB snapshot comparison
-      // We return the snapshots via todaySnapshots — but changes need DB access
-      // The cron route handles the DB diff loop
-      ...{ todaySnapshots },
-    } as {
-      processed: number
-      changes: {
-        dotNumber: string
-        field: string
-        oldValue: string
-        newValue: string
-        todaySnapshot: CarrierSnapshot
-      }[]
-      todaySnapshots: Map<string, CarrierSnapshot>
+      changes: [],
+      todaySnapshots,
+      insHistFlags,
     }
   } finally {
     // Clean up temp files

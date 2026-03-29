@@ -42,6 +42,38 @@ export async function getOwnershipSnapshot(dotNumber: string): Promise<CarrierSn
   }
 }
 
+// Returns the most recent snapshot strictly before today — used for ownership diff at lookup time.
+// After writing today's snapshot synchronously, getOwnershipSnapshot would return today's record,
+// so we need this separate query to get the previous day's baseline.
+export async function getPreviousSnapshot(dotNumber: string): Promise<CarrierSnapshot | null> {
+  try {
+    const supabase = getClient()
+    const today = new Date().toISOString().split('T')[0]
+    const { data, error } = await supabase
+      .from('carrier_snapshots')
+      .select('*')
+      .eq('dot_number', dotNumber)
+      .lt('snapshot_date', today)
+      .order('snapshot_date', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error || !data) return null
+
+    return {
+      dotNumber: data.dot_number,
+      snapshotDate: data.snapshot_date,
+      legalName: data.legal_name,
+      physicalAddress: data.physical_address,
+      phone: data.phone,
+      ein: data.ein,
+      insuranceCancellationDate: data.insurance_cancellation_date ?? null,
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function writeSnapshot(
   dotNumber: string,
   snapshot: Omit<CarrierSnapshot, 'dotNumber' | 'snapshotDate'> & { rawJson?: unknown }
@@ -50,6 +82,7 @@ export async function writeSnapshot(
     const supabase = getClient()
     const today = new Date().toISOString().split('T')[0]
 
+    // ignoreDuplicates: true → ON CONFLICT DO NOTHING (repeat lookups same day are no-ops)
     await supabase.from('carrier_snapshots').upsert({
       dot_number: dotNumber,
       snapshot_date: today,
@@ -59,7 +92,7 @@ export async function writeSnapshot(
       ein: snapshot.ein,
       insurance_cancellation_date: snapshot.insuranceCancellationDate ?? null,
       raw_json: snapshot.rawJson ?? null,
-    }, { onConflict: 'dot_number,snapshot_date' })
+    }, { onConflict: 'dot_number,snapshot_date', ignoreDuplicates: true })
 
     // Prune snapshots older than 30 days
     const cutoff = new Date()
@@ -71,6 +104,64 @@ export async function writeSnapshot(
       .lt('snapshot_date', cutoff.toISOString().split('T')[0])
   } catch (err) {
     console.error('writeSnapshot error:', err)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// InsHist ownership flags — name change / transfer signals from bulk file
+// Table: ins_hist_flags (dot_number, cancellation_method, cancellation_date)
+// Populated nightly by cron; queried at lookup time.
+// ---------------------------------------------------------------------------
+
+export interface InsHistFlag {
+  dotNumber: string
+  cancellationMethod: string
+  cancellationDate: string  // ISO date string
+}
+
+export async function getInsHistFlag(dotNumber: string): Promise<InsHistFlag | null> {
+  try {
+    const supabase = getClient()
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 90)
+
+    const { data, error } = await supabase
+      .from('ins_hist_flags')
+      .select('*')
+      .eq('dot_number', dotNumber)
+      .gte('cancellation_date', cutoff.toISOString().split('T')[0])
+      .order('cancellation_date', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error || !data) return null
+
+    return {
+      dotNumber: data.dot_number,
+      cancellationMethod: data.cancellation_method,
+      cancellationDate: data.cancellation_date,
+    }
+  } catch {
+    return null
+  }
+}
+
+export async function writeInsHistFlags(
+  flags: { dotNumber: string; cancellationMethod: string; cancellationDate: string }[]
+): Promise<void> {
+  if (flags.length === 0) return
+  try {
+    const supabase = getClient()
+    await supabase.from('ins_hist_flags').upsert(
+      flags.map((f) => ({
+        dot_number: f.dotNumber,
+        cancellation_method: f.cancellationMethod,
+        cancellation_date: f.cancellationDate,
+      })),
+      { onConflict: 'dot_number,cancellation_date,cancellation_method', ignoreDuplicates: true }
+    )
+  } catch (err) {
+    console.error('writeInsHistFlags error:', err)
   }
 }
 

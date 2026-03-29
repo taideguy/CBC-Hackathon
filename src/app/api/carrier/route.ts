@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { resolveIdentifier, fetchAllCarrierData, fetchDotByMC } from '@/lib/fmcsa'
 import { scoreSignals, deriveVerdict, scoreCargoFit, scoreOperatingClass, buildInspectionStats } from '@/lib/scoring'
 import { generateSummaryStream } from '@/lib/claude'
-import { getOwnershipSnapshot, writeSnapshot, getOwnershipEventCount } from '@/lib/db'
+import { getPreviousSnapshot, writeSnapshot, getOwnershipEventCount, getInsHistFlag } from '@/lib/db'
 import { getFleetProfile, buildFleetProfile } from '@/lib/fleet'
 import type { Carrier, CarrierLookupResponse, CarrierResult } from '@/types'
 
@@ -89,17 +89,28 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       cargoCarried: rawCarrier.cargoCarried,
     }
 
-    // Get ownership snapshot, fleet profile, and change velocity from DB in parallel
-    const [snapshot, fleetProfile, changeVelocity] = await Promise.all([
-      getOwnershipSnapshot(dotNumber),
+    // Write today's snapshot synchronously before scoring so it exists for future diffs.
+    // getPreviousSnapshot fetches the baseline (any date before today) for the ownership diff.
+    // All three DB ops run in parallel; snapshot write is awaited so it completes before response.
+    const [snapshot, fleetProfile, changeVelocity, insHistFlag] = await Promise.all([
+      getPreviousSnapshot(dotNumber),
       getFleetProfile(dotNumber),
       getOwnershipEventCount(dotNumber),
+      getInsHistFlag(dotNumber),
+      writeSnapshot(dotNumber, {
+        legalName: rawCarrier.legalName,
+        physicalAddress: rawCarrier.phyState,
+        phone: '',
+        ein: null,
+        insuranceCancellationDate: null,
+        rawJson: { carrier: rawCarrier },
+      }),
     ])
 
     // Build inspection stats from carrier response
     const inspectionStats = buildInspectionStats(fmcsaData.carrier)
 
-    // Score all 6 signals
+    // Score all signals
     const signals = scoreSignals({
       carrier: fmcsaData.carrier,
       authority: fmcsaData.authority,
@@ -107,6 +118,7 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       snapshot,
       changeVelocity,
       inspectionStats,
+      insHistFlag,
     })
 
     // If a commodity was sent with the request, add cargo fit signal before Claude call
@@ -125,16 +137,6 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
 
     const verdict = deriveVerdict(allSignals)
     const checkedAt = new Date().toISOString()
-
-    // Write snapshot for future ownership diff (fire and forget)
-    writeSnapshot(dotNumber, {
-      legalName: rawCarrier.legalName,
-      physicalAddress: rawCarrier.phyState, // state only — bulk file gives full address
-      phone: '',
-      ein: null,
-      insuranceCancellationDate: null, // populated by nightly InsHist bulk file parse
-      rawJson: { carrier: rawCarrier },
-    }).catch(console.error)
 
     // Build fleet profile lazily if not cached (fire and forget)
     if (!fleetProfile) {
