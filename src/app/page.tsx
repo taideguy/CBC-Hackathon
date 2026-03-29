@@ -12,7 +12,7 @@ import RiskSummary from '@/components/RiskSummary'
 import WatchlistItemComponent from '@/components/WatchlistItem'
 import BottomNav from '@/components/BottomNav'
 import type { CarrierResult, WatchlistItem, Verdict, FleetProfile, Signal, OwnershipEvent } from '@/types'
-import { scoreCargoFit, COMMODITY_OPTIONS } from '@/lib/scoring'
+import { scoreCargoFit, scoreOperatingClass, COMMODITY_OPTIONS } from '@/lib/scoring'
 
 // ---------------------------------------------------------------------------
 // User ID — persisted in localStorage
@@ -39,8 +39,9 @@ const verdictTitles: Record<Verdict, string> = {
 }
 
 function getVerdictSubtitle(result: CarrierResult): string {
-  const flags = result.signals.filter((s) => s.status !== 'ok').length
-  if (flags === 0) return '6 / 6 signals pass'
+  const total = result.signals.length
+  const flags = result.signals.filter((s) => s.status === 'warn' || s.status === 'danger').length
+  if (flags === 0) return `${total} / ${total} signals pass`
   return `${flags} flag${flags > 1 ? 's' : ''} detected`
 }
 
@@ -632,13 +633,39 @@ export default function Home() {
                 {/* Signal grid (+ optional 7th cargo-fit card) */}
                 <Section delay={100}>
                   {(() => {
-                    const baseSignals = result.signals.filter((s) => s.id !== 'cargoFit')
+                    const baseSignals = result.signals.filter(
+                      (s) => s.id !== 'cargoFit' && s.id !== 'operatingClass'
+                    )
                     const cargoFitSignal = scoreCargoFit(
                       selectedCommodity,
                       result.carrier.cargoCarried ?? [],
                       result.carrier.entityType
                     )
-                    const signals = cargoFitSignal ? [...baseSignals, cargoFitSignal] : baseSignals
+                    const operatingClassSignal = scoreOperatingClass(
+                      result.carrier.operatingClassification
+                    )
+                    const SIGNAL_ORDER: import('@/types').SignalId[] = [
+                      'authority', 'insurance', 'outOfService', 'safety',
+                      'ownership', 'basics', 'inspectionActivity', 'oosRate',
+                    ]
+                    const unordered = [
+                      ...baseSignals,
+                      ...(cargoFitSignal ? [cargoFitSignal] : []),
+                      ...(operatingClassSignal ? [operatingClassSignal] : []),
+                    ]
+                    const cargoIsBlocking = cargoFitSignal &&
+                      (cargoFitSignal.status === 'warn' || cargoFitSignal.status === 'danger')
+                    const signals = [
+                      ...(cargoIsBlocking ? [cargoFitSignal!] : []),
+                      ...unordered
+                        .filter((s) => !(cargoIsBlocking && s.id === 'cargoFit'))
+                        .sort((a, b) => {
+                          const ai = SIGNAL_ORDER.indexOf(a.id)
+                          const bi = SIGNAL_ORDER.indexOf(b.id)
+                          // unknown ids (cargoFit/operatingClass when not blocking) go last
+                          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+                        }),
+                    ]
                     return <SignalList signals={signals} />
                   })()}
                 </Section>

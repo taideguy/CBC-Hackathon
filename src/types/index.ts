@@ -12,8 +12,11 @@ export type SignalId =
   | 'outOfService'
   | 'basics'
   | 'cargoFit'
+  | 'operatingClass'
+  | 'inspectionActivity'
+  | 'oosRate'
 
-export type SignalStatus = 'ok' | 'warn' | 'danger'
+export type SignalStatus = 'ok' | 'neutral' | 'warn' | 'danger'
 
 export interface SignalExpandDetail {
   rows: Array<{ label: string; value: string }>
@@ -40,6 +43,13 @@ export interface FleetProfile {
   lastUpdated: string
 }
 
+export interface InspectionStats {
+  totalInspections: number
+  vehicleOosRate: number | null   // percentage 0–100, e.g. 8.5
+  driverOosRate: number | null    // percentage 0–100
+  mcs150FormDate: string | null   // ISO date string from FMCSA
+}
+
 export interface Carrier {
   dotNumber: string
   mcNumber: string | null
@@ -63,6 +73,7 @@ export interface CarrierResult {
   checkedAt: string
   fleetProfile?: FleetProfile | null
   hadPriorSnapshot: boolean
+  inspectionStats?: InspectionStats | null
 }
 
 export interface WatchlistItem {
@@ -119,6 +130,12 @@ export interface FMCSACarrierResponse {
       operatingStatus: string
       operatingClassification: string | null
       cargoCarried: string[]
+      // 24-month inspection data
+      vehicleInspections: number | null
+      vehicleOosInspections: number | null
+      driverInspections: number | null
+      driverOosInspections: number | null
+      mcs150FormDate: string | null
     }
   }[]
 }

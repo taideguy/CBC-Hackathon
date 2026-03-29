@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { resolveIdentifier, fetchAllCarrierData, fetchDotByMC } from '@/lib/fmcsa'
-import { scoreSignals, deriveVerdict, scoreCargoFit } from '@/lib/scoring'
+import { scoreSignals, deriveVerdict, scoreCargoFit, scoreOperatingClass, buildInspectionStats } from '@/lib/scoring'
 import { generateSummaryStream } from '@/lib/claude'
 import { getOwnershipSnapshot, writeSnapshot, getOwnershipEventCount } from '@/lib/db'
 import { getFleetProfile, buildFleetProfile } from '@/lib/fleet'
@@ -96,6 +96,9 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       getOwnershipEventCount(dotNumber),
     ])
 
+    // Build inspection stats from carrier response
+    const inspectionStats = buildInspectionStats(fmcsaData.carrier)
+
     // Score all 6 signals
     const signals = scoreSignals({
       carrier: fmcsaData.carrier,
@@ -103,6 +106,7 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       basics: fmcsaData.basics,
       snapshot,
       changeVelocity,
+      inspectionStats,
     })
 
     // If a commodity was sent with the request, add cargo fit signal before Claude call
@@ -112,7 +116,12 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       rawCarrier.cargoCarried,
       rawCarrier.entityType
     )
-    const allSignals = cargoFitSignal ? [...signals, cargoFitSignal] : signals
+    const operatingClassSignal = scoreOperatingClass(rawCarrier.operatingClassification)
+    const allSignals = [
+      ...signals,
+      ...(cargoFitSignal ? [cargoFitSignal] : []),
+      ...(operatingClassSignal ? [operatingClassSignal] : []),
+    ]
 
     const verdict = deriveVerdict(allSignals)
     const checkedAt = new Date().toISOString()
@@ -146,6 +155,7 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       checkedAt,
       fleetProfile: fleetProfile ?? null,
       hadPriorSnapshot: snapshot !== null,
+      inspectionStats,
     }
 
     const prefix = JSON.stringify(result) + '\n'

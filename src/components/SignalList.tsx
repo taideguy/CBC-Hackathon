@@ -2,20 +2,23 @@
 
 import { useState } from 'react'
 import type { Signal, SignalId } from '@/types'
-import { Shield, Lock, ClipboardCheck, Users, Ban, BarChart3, Package, ChevronDown, ChevronUp, type LucideIcon } from 'lucide-react'
+import { Shield, Lock, ClipboardCheck, Users, Ban, BarChart3, Package, Scale, Activity, Gauge, ChevronDown, ChevronUp, type LucideIcon } from 'lucide-react'
 
 interface SignalListProps {
   signals: Signal[]
 }
 
 const SIGNAL_ICONS: Record<SignalId, LucideIcon> = {
-  authority:    Shield,
-  insurance:    Lock,
-  safety:       ClipboardCheck,
-  ownership:    Users,
-  outOfService: Ban,
-  basics:       BarChart3,
-  cargoFit:     Package,
+  authority:          Shield,
+  insurance:          Lock,
+  safety:             ClipboardCheck,
+  ownership:          Users,
+  outOfService:       Ban,
+  basics:             BarChart3,
+  cargoFit:           Package,
+  operatingClass:     Scale,
+  inspectionActivity: Activity,
+  oosRate:            Gauge,
 }
 
 const STATUS_CONFIG = {
@@ -29,6 +32,18 @@ const STATUS_CONFIG = {
     badgeLabel:   'Secure',
     labelColor:   '#57534e',
     valueColor:   '#e5e2e1',
+    detailColor:  '#78716c',
+  },
+  neutral: {
+    // Gray — informational, not scored
+    borderColor:  '#333333',
+    iconColor:    '#78716c',
+    badgeBg:      'transparent',
+    badgeBorder:  'rgba(120, 113, 108, 0.35)',
+    badgeText:    '#78716c',
+    badgeLabel:   'Info',
+    labelColor:   '#57534e',
+    valueColor:   '#a8a29e',
     detailColor:  '#78716c',
   },
   warn: {

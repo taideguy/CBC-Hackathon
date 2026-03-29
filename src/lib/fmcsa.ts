@@ -38,6 +38,11 @@ const MOCK_CLEAR: {
           operatingStatus: 'ACTIVE',
           operatingClassification: 'Auth. For Hire',
           cargoCarried: ['General Freight', 'Refrigerated Food', 'Metal: Coils, Steel', 'Household Goods', 'Building Materials'],
+          vehicleInspections: 38,
+          vehicleOosInspections: 1,
+          driverInspections: 14,
+          driverOosInspections: 0,
+          mcs150FormDate: '2024-06-15',
         },
       },
     ],
@@ -87,6 +92,11 @@ const MOCK_WARN: typeof MOCK_CLEAR = {
           operatingStatus: 'ACTIVE',
           operatingClassification: 'Auth. For Hire',
           cargoCarried: ['General Freight', 'Chemicals', 'Hazardous Materials'],
+          vehicleInspections: 9,
+          vehicleOosInspections: 3,
+          driverInspections: 4,
+          driverOosInspections: 1,
+          mcs150FormDate: '2023-03-20',
         },
       },
     ],
@@ -136,6 +146,11 @@ const MOCK_DANGER: typeof MOCK_CLEAR = {
           operatingStatus: 'REVOKED',
           operatingClassification: 'Auth. For Hire',
           cargoCarried: ['General Freight'],
+          vehicleInspections: 5,
+          vehicleOosInspections: 4,
+          driverInspections: 2,
+          driverOosInspections: 1,
+          mcs150FormDate: '2021-01-10',
         },
       },
     ],
@@ -293,6 +308,11 @@ function normalizeCarrierResponse(raw: any): FMCSACarrierResponse {
           operatingStatus: normalizeOperatingStatus(carrier.statusCode ?? carrier.operatingStatus),
           operatingClassification,
           cargoCarried,
+          vehicleInspections: carrier.vehicleInsp != null ? Number(carrier.vehicleInsp) : (carrier.vehicleInspections != null ? Number(carrier.vehicleInspections) : null),
+          vehicleOosInspections: carrier.vehicleOosInsp != null ? Number(carrier.vehicleOosInsp) : (carrier.vehicleOosInspections != null ? Number(carrier.vehicleOosInspections) : null),
+          driverInspections: carrier.driverInsp != null ? Number(carrier.driverInsp) : (carrier.driverInspections != null ? Number(carrier.driverInspections) : null),
+          driverOosInspections: carrier.driverOosInsp != null ? Number(carrier.driverOosInsp) : (carrier.driverOosInspections != null ? Number(carrier.driverOosInspections) : null),
+          mcs150FormDate: carrier.mcs150Date ?? carrier.mcs150FormDate ?? null,
         },
       },
     ],
@@ -381,6 +401,25 @@ export async function fetchCarrierBasics(dotNumber: string): Promise<FMCSABasics
   return normalizeBasicsResponse(raw)
 }
 
+// Cargo endpoint returns: { content: [{ cargoClassDesc: "General Freight", id: {...} }, ...] }
+// content is a flat array of cargo items — each with cargoClassDesc
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fetchCarrierCargo(dotNumber: string): Promise<string[]> {
+  try {
+    const raw = await fmcsaGet(`/carriers/${dotNumber}/cargo-carried`) as any
+    const items = Array.isArray(raw?.content) ? raw.content : []
+    return items
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((c: any) =>
+        typeof c === 'string' ? c : (c?.cargoClassDesc ?? c?.cargoCarriedDesc ?? c?.description ?? '')
+      )
+      .filter(Boolean)
+  } catch {
+    // Cargo endpoint may return 404 for carriers with no cargo on file — not fatal
+    return []
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Lookup by MC number
 // ---------------------------------------------------------------------------
@@ -419,11 +458,17 @@ export async function fetchAllCarrierData(dotNumber: string): Promise<FMCSACarri
 
   // Fetch carrier first so we can pass its raw data to authority as fallback
   const carrierRaw = await fmcsaGet(`/carriers/${dotNumber}`)
-  const [carrier, authority, basics] = await Promise.all([
+  const [carrier, authority, basics, cargoList] = await Promise.all([
     Promise.resolve(normalizeCarrierResponse(carrierRaw)),
     fetchCarrierAuth(dotNumber, carrierRaw),
     fetchCarrierBasics(dotNumber),
+    fetchCarrierCargo(dotNumber),
   ])
+
+  // Inject cargo into the normalized carrier response (main endpoint returns none)
+  if (cargoList.length > 0) {
+    carrier.content[0].carrier.cargoCarried = cargoList
+  }
 
   return { carrier, authority, basics, dotNumber }
 }
