@@ -38,7 +38,7 @@ function getVerdictContent(result: CarrierResult): { title: string; subtitle: st
 
   if (result.verdict === 'danger') return { title: 'Do not load', subtitle: `${flags} flag${flags > 1 ? 's' : ''} detected` }
   if (result.verdict === 'warn') {
-    if (flags === 1) return { title: 'Likely fine, go ahead', subtitle: 'verify key details' }
+    if (flags === 1) return { title: 'Likely fine, proceed', subtitle: 'verify key details' }
     return { title: 'Verify before loading', subtitle: `${flags} flags detected` }
   }
   return { title: 'Clear to load', subtitle: `${total} / ${total} signals pass` }
@@ -513,6 +513,7 @@ export default function Home() {
                   verdict={result.verdict}
                   title={getVerdictContent(result).title}
                   subtitle={getVerdictContent(result).subtitle}
+                  singleFlag={result.verdict === 'warn' && result.signals.filter((s) => s.status === 'warn' || s.status === 'danger').length === 1}
                 />
 
                 {/* Carrier summary */}

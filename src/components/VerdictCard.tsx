@@ -1,10 +1,11 @@
 import type { Verdict } from '@/types'
-import { ShieldCheck, AlertTriangle, ShieldX } from 'lucide-react'
+import { ShieldCheck, AlertTriangle, ShieldX, ArrowRight } from 'lucide-react'
 
 interface VerdictCardProps {
   verdict: Verdict
   title: string
   subtitle: string
+  singleFlag?: boolean
 }
 
 const config = {
@@ -16,6 +17,7 @@ const config = {
     badgeBorder: 'rgba(156, 202, 255, 0.40)',
     badgeText:   '#9ccaff',
     badgeLabel:  'All Clear',
+    badgeSubtext: null as string | null,
     Icon:        ShieldCheck,
     iconRgb:     '156,202,255',
   },
@@ -27,6 +29,7 @@ const config = {
     badgeBorder: '#FF6B00',
     badgeText:   '#000000',
     badgeLabel:  'Risk Detected',
+    badgeSubtext: null as string | null,
     Icon:        AlertTriangle,
     iconRgb:     '255,107,0',
   },
@@ -38,13 +41,31 @@ const config = {
     badgeBorder: '#F74040',
     badgeText:   '#000000',
     badgeLabel:  'Do Not Use',
+    badgeSubtext: null as string | null,
     Icon:        ShieldX,
     iconRgb:     '247,64,64',
   },
 } as const
 
-export default function VerdictCard({ verdict, title, subtitle }: VerdictCardProps) {
-  const c = config[verdict]
+export default function VerdictCard({ verdict, title, subtitle, singleFlag }: VerdictCardProps) {
+  // Single-flag warn: blue card, orange badge with subtext, blue proceed icon
+  const isSingleWarn = verdict === 'warn' && singleFlag
+
+  const c = isSingleWarn
+    ? {
+        borderColor:  '#9ccaff',
+        textColor:    '#9ccaff',
+        bgColor:      'rgba(156, 202, 255, 0.05)',
+        badgeBg:      '#FF6B00',
+        badgeBorder:  '#FF6B00',
+        badgeText:    '#000000',
+        badgeLabel:   'Risk Detected',
+        badgeSubtext: subtitle,
+        Icon:         ArrowRight,
+        iconRgb:      '156,202,255',
+      }
+    : { ...config[verdict], badgeSubtext: null }
+
   const { Icon } = c
 
   return (
@@ -77,39 +98,58 @@ export default function VerdictCard({ verdict, title, subtitle }: VerdictCardPro
           </div>
 
           {/* Badge */}
-          <div style={{ marginBottom: '12px' }}>
+          <div style={{ marginBottom: isSingleWarn ? 0 : '12px' }}>
             <span style={{
               display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
+              flexDirection: c.badgeSubtext ? 'column' : 'row',
+              alignItems: c.badgeSubtext ? 'flex-start' : 'center',
+              gap: c.badgeSubtext ? '4px' : '6px',
               padding: '5px 11px',
               background: c.badgeBg,
               border: `1px solid ${c.badgeBorder}`,
               borderRadius: '2px',
             }}>
-              <Icon size={12} color={c.badgeText} aria-hidden="true" />
-              <span style={{
-                fontSize: '10px',
-                fontFamily: 'var(--font-display)',
-                fontWeight: 900,
-                letterSpacing: '0.18em',
-                textTransform: 'uppercase',
-                color: c.badgeText,
-              }}>
-                {c.badgeLabel}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                {!c.badgeSubtext && <Icon size={12} color={c.badgeText} aria-hidden="true" />}
+                {c.badgeSubtext && <AlertTriangle size={12} color={c.badgeText} aria-hidden="true" />}
+                <span style={{
+                  fontSize: '10px',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 900,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: c.badgeText,
+                }}>
+                  {c.badgeLabel}
+                </span>
               </span>
+              {c.badgeSubtext && (
+                <span style={{
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-body)',
+                  fontWeight: 600,
+                  color: c.badgeText,
+                  opacity: 0.75,
+                  textTransform: 'none',
+                  letterSpacing: 0,
+                }}>
+                  {c.badgeSubtext}
+                </span>
+              )}
             </span>
           </div>
 
-          <div style={{
-            fontFamily: 'var(--font-body)',
-            fontWeight: 500,
-            fontSize: '14px',
-            color: c.textColor,
-            opacity: 0.65,
-          }}>
-            {subtitle}
-          </div>
+          {!isSingleWarn && (
+            <div style={{
+              fontFamily: 'var(--font-body)',
+              fontWeight: 500,
+              fontSize: '14px',
+              color: c.textColor,
+              opacity: 0.65,
+            }}>
+              {subtitle}
+            </div>
+          )}
         </div>
 
         {/* Right: icon box */}
