@@ -402,11 +402,17 @@ export async function fetchCarrierBasics(dotNumber: string): Promise<FMCSABasics
 }
 
 // Cargo endpoint returns: { content: [{ cargoClassDesc: "General Freight", id: {...} }, ...] }
-// content is a flat array of cargo items — each with cargoClassDesc
+// content is a flat array of cargo items — each with cargoClassDesc.
+// Capped at 3s — this endpoint is often slow and cargo is a non-blocking signal.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function fetchCarrierCargo(dotNumber: string): Promise<string[]> {
   try {
-    const raw = await fmcsaGet(`/carriers/${dotNumber}/cargo-carried`) as any
+    const timeout = new Promise<null>((res) => setTimeout(() => res(null), 3000))
+    const raw = await Promise.race([
+      fmcsaGet(`/carriers/${dotNumber}/cargo-carried`),
+      timeout,
+    ]) as any
+    if (!raw) return []
     const items = Array.isArray(raw?.content) ? raw.content : []
     return items
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -415,7 +421,6 @@ async function fetchCarrierCargo(dotNumber: string): Promise<string[]> {
       )
       .filter(Boolean)
   } catch {
-    // Cargo endpoint may return 404 for carriers with no cargo on file — not fatal
     return []
   }
 }
