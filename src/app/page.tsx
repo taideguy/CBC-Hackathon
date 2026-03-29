@@ -32,17 +32,16 @@ function getUserId(): string {
 // Verdict helpers
 // ---------------------------------------------------------------------------
 
-const verdictTitles: Record<Verdict, string> = {
-  clear: 'Clear to load',
-  warn: 'Verify before loading',
-  danger: 'Do not load',
-}
-
-function getVerdictSubtitle(result: CarrierResult): string {
+function getVerdictContent(result: CarrierResult): { title: string; subtitle: string } {
   const total = result.signals.length
   const flags = result.signals.filter((s) => s.status === 'warn' || s.status === 'danger').length
-  if (flags === 0) return `${total} / ${total} signals pass`
-  return `${flags} flag${flags > 1 ? 's' : ''} detected`
+
+  if (result.verdict === 'danger') return { title: 'Do not load', subtitle: `${flags} flag${flags > 1 ? 's' : ''} detected` }
+  if (result.verdict === 'warn') {
+    if (flags === 1) return { title: 'Likely fine, go ahead', subtitle: 'verify key details' }
+    return { title: 'Verify before loading', subtitle: `${flags} flags detected` }
+  }
+  return { title: 'Clear to load', subtitle: `${total} / ${total} signals pass` }
 }
 
 // ---------------------------------------------------------------------------
@@ -512,8 +511,8 @@ export default function Home() {
                 {/* Verdict hero */}
                 <VerdictCard
                   verdict={result.verdict}
-                  title={verdictTitles[result.verdict]}
-                  subtitle={getVerdictSubtitle(result)}
+                  title={getVerdictContent(result).title}
+                  subtitle={getVerdictContent(result).subtitle}
                 />
 
                 {/* Carrier summary */}
