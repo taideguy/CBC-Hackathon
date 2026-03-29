@@ -89,23 +89,28 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       cargoCarried: rawCarrier.cargoCarried,
     }
 
-    // Write today's snapshot synchronously before scoring so it exists for future diffs.
-    // getPreviousSnapshot fetches the baseline (any date before today) for the ownership diff.
-    // All three DB ops run in parallel; snapshot write is awaited so it completes before response.
+    // DB calls run with a 4-second cap so a slow/missing Supabase table can't block the response.
+    const DB_TIMEOUT = 4000
+    function withTimeout<T>(p: Promise<T>, fallback: T): Promise<T> {
+      return Promise.race([p, new Promise<T>((res) => setTimeout(() => res(fallback), DB_TIMEOUT))])
+    }
+
     const [snapshot, fleetProfile, changeVelocity, insHistFlag] = await Promise.all([
-      getPreviousSnapshot(dotNumber),
-      getFleetProfile(dotNumber),
-      getOwnershipEventCount(dotNumber),
-      getInsHistFlag(dotNumber),
-      writeSnapshot(dotNumber, {
-        legalName: rawCarrier.legalName,
-        physicalAddress: rawCarrier.phyState,
-        phone: '',
-        ein: null,
-        insuranceCancellationDate: null,
-        rawJson: { carrier: rawCarrier },
-      }),
+      withTimeout(getPreviousSnapshot(dotNumber), null),
+      withTimeout(getFleetProfile(dotNumber), null),
+      withTimeout(getOwnershipEventCount(dotNumber), 0),
+      withTimeout(getInsHistFlag(dotNumber), null),
     ])
+
+    // Write snapshot fire-and-forget — must not block the response path
+    writeSnapshot(dotNumber, {
+      legalName: rawCarrier.legalName,
+      physicalAddress: rawCarrier.phyState,
+      phone: '',
+      ein: null,
+      insuranceCancellationDate: null,
+      rawJson: { carrier: rawCarrier },
+    }).catch(console.error)
 
     // Build inspection stats from carrier response
     const inspectionStats = buildInspectionStats(fmcsaData.carrier)
