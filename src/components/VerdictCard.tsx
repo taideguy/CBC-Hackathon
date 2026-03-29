@@ -1,5 +1,5 @@
 import type { Verdict } from '@/types'
-import { ShieldCheck, AlertTriangle, ShieldX, ArrowRight } from 'lucide-react'
+import { ShieldCheck, AlertTriangle, ShieldX, ChevronsRight } from 'lucide-react'
 
 interface VerdictCardProps {
   verdict: Verdict
@@ -59,9 +59,9 @@ export default function VerdictCard({ verdict, title, subtitle, singleFlag }: Ve
         badgeBg:      '#FF6B00',
         badgeBorder:  '#FF6B00',
         badgeText:    '#000000',
-        badgeLabel:   'Risk Detected',
-        badgeSubtext: subtitle,
-        Icon:         ArrowRight,
+        badgeLabel:   'Verify Key Details',
+        badgeSubtext: null as string | null,
+        Icon:         ChevronsRight,
         iconRgb:      '156,202,255',
       }
     : { ...config[verdict], badgeSubtext: null }
