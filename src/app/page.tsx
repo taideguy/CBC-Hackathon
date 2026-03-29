@@ -858,10 +858,6 @@ export default function Home() {
                     onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(156,202,255,0.08)')}
                     onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <path d="M0 4H4.43381L10.4338 14H16V12H11.5662L5.56619 2H0V4Z" fill="#9ccaff"/>
-                      <path d="M10 4H16V2H10V4Z" fill="#9ccaff"/>
-                    </svg>
                     Scan Next DOT
                   </button>
                 </Section>
