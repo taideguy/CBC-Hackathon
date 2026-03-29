@@ -839,10 +839,10 @@ export default function Home() {
                     style={{
                       width: '100%',
                       height: '48px',
-                      background: '#9ccaff',
+                      background: 'transparent',
                       border: '2px solid #9ccaff',
                       borderRadius: '2px',
-                      color: '#000000',
+                      color: '#9ccaff',
                       fontSize: '12px',
                       fontFamily: 'var(--font-display)',
                       fontWeight: 900,
@@ -855,12 +855,12 @@ export default function Home() {
                       gap: '8px',
                       transition: 'background 0.15s ease',
                     }}
-                    onMouseOver={(e) => (e.currentTarget.style.background = '#ffffff')}
-                    onMouseOut={(e) => (e.currentTarget.style.background = '#9ccaff')}
+                    onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(156,202,255,0.08)')}
+                    onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                      <path d="M0 4H4.43381L10.4338 14H16V12H11.5662L5.56619 2H0V4Z" fill="#000000"/>
-                      <path d="M10 4H16V2H10V4Z" fill="#000000"/>
+                      <path d="M0 4H4.43381L10.4338 14H16V12H11.5662L5.56619 2H0V4Z" fill="#9ccaff"/>
+                      <path d="M10 4H16V2H10V4Z" fill="#9ccaff"/>
                     </svg>
                     Scan Next DOT
                   </button>
