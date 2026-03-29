@@ -630,7 +630,7 @@ export default function Home() {
                   </Section>
                 )}
 
-                {/* Signal grid (+ optional 7th cargo-fit card) */}
+                {/* Signal grid — two labeled sections */}
                 <Section delay={100}>
                   {(() => {
                     const baseSignals = result.signals.filter(
@@ -644,29 +644,48 @@ export default function Home() {
                     const operatingClassSignal = scoreOperatingClass(
                       result.carrier.operatingClassification
                     )
-                    const SIGNAL_ORDER: import('@/types').SignalId[] = [
-                      'authority', 'insurance', 'outOfService', 'safety',
-                      'ownership', 'basics', 'inspectionActivity', 'oosRate',
-                    ]
-                    const unordered = [
+                    const all = [
                       ...baseSignals,
                       ...(cargoFitSignal ? [cargoFitSignal] : []),
                       ...(operatingClassSignal ? [operatingClassSignal] : []),
                     ]
-                    const cargoIsBlocking = cargoFitSignal &&
-                      (cargoFitSignal.status === 'warn' || cargoFitSignal.status === 'danger')
-                    const signals = [
-                      ...(cargoIsBlocking ? [cargoFitSignal!] : []),
-                      ...unordered
-                        .filter((s) => !(cargoIsBlocking && s.id === 'cargoFit'))
-                        .sort((a, b) => {
-                          const ai = SIGNAL_ORDER.indexOf(a.id)
-                          const bi = SIGNAL_ORDER.indexOf(b.id)
-                          // unknown ids (cargoFit/operatingClass when not blocking) go last
-                          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
-                        }),
+
+                    const SECTION1_ORDER: import('@/types').SignalId[] = [
+                      'cargoFit', 'ownership', 'inspectionActivity', 'authority', 'operatingClass',
                     ]
-                    return <SignalList signals={signals} />
+                    const SECTION2_ORDER: import('@/types').SignalId[] = [
+                      'insurance', 'safety', 'outOfService', 'basics', 'oosRate',
+                    ]
+
+                    const section1 = all
+                      .filter((s) => SECTION1_ORDER.includes(s.id as import('@/types').SignalId))
+                      .sort((a, b) => SECTION1_ORDER.indexOf(a.id as import('@/types').SignalId) - SECTION1_ORDER.indexOf(b.id as import('@/types').SignalId))
+                    const section2 = all
+                      .filter((s) => SECTION2_ORDER.includes(s.id as import('@/types').SignalId))
+                      .sort((a, b) => SECTION2_ORDER.indexOf(a.id as import('@/types').SignalId) - SECTION2_ORDER.indexOf(b.id as import('@/types').SignalId))
+
+                    const sectionLabelStyle: React.CSSProperties = {
+                      fontSize: '10px',
+                      fontFamily: 'var(--font-display)',
+                      fontWeight: 900,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.28em',
+                      color: 'var(--text-3)',
+                      marginBottom: '8px',
+                    }
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div>
+                          <p style={sectionLabelStyle}>Identity &amp; Fraud Risk</p>
+                          <SignalList signals={section1} />
+                        </div>
+                        <div>
+                          <p style={sectionLabelStyle}>Operational Legitimacy</p>
+                          <SignalList signals={section2} />
+                        </div>
+                      </div>
+                    )
                   })()}
                 </Section>
 
