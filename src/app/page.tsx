@@ -839,10 +839,10 @@ export default function Home() {
                     style={{
                       width: '100%',
                       height: '48px',
-                      background: 'transparent',
-                      border: '2px solid var(--border)',
+                      background: '#9ccaff',
+                      border: '2px solid #9ccaff',
                       borderRadius: '2px',
-                      color: 'var(--text-3)',
+                      color: '#000000',
                       fontSize: '12px',
                       fontFamily: 'var(--font-display)',
                       fontWeight: 900,
@@ -853,18 +853,15 @@ export default function Home() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
-                      transition: 'border-color 0.15s ease, color 0.15s ease',
+                      transition: 'background 0.15s ease',
                     }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border-2)'
-                      e.currentTarget.style.color = 'var(--text-2)'
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border)'
-                      e.currentTarget.style.color = 'var(--text-3)'
-                    }}
+                    onMouseOver={(e) => (e.currentTarget.style.background = '#ffffff')}
+                    onMouseOut={(e) => (e.currentTarget.style.background = '#9ccaff')}
                   >
-                    <Terminal size={14} aria-hidden="true" />
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <path d="M0 4H4.43381L10.4338 14H16V12H11.5662L5.56619 2H0V4Z" fill="#000000"/>
+                      <path d="M10 4H16V2H10V4Z" fill="#000000"/>
+                    </svg>
                     Scan Next DOT
                   </button>
                 </Section>
