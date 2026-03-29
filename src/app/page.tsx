@@ -651,10 +651,10 @@ export default function Home() {
                     ]
 
                     const SECTION1_ORDER: import('@/types').SignalId[] = [
-                      'cargoFit', 'ownership', 'inspectionActivity', 'authority', 'operatingClass',
+                      'cargoFit', 'ownership', 'inspectionActivity', 'operatingClass',
                     ]
                     const SECTION2_ORDER: import('@/types').SignalId[] = [
-                      'insurance', 'safety', 'outOfService', 'basics', 'oosRate',
+                      'authority', 'insurance', 'safety', 'outOfService', 'basics', 'oosRate',
                     ]
 
                     const section1 = all
