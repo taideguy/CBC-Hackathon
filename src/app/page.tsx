@@ -696,6 +696,27 @@ export default function Home() {
                   </Section>
                 )}
 
+                {/* FMCSA raw record link */}
+                <a
+                  href={`https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnapshot&query_param=USDOT&query_string=${result.carrier.dotNumber}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: '10px',
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 900,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: 'var(--text-3)',
+                    textDecoration: 'none',
+                    textUnderlineOffset: '3px',
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                  onMouseOut={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                >
+                  View raw FMCSA record →
+                </a>
+
                 {/* Add to watchlist */}
                 <Section delay={180}>
                   {!isOnWatchlist ? (
